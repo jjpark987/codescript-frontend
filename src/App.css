@@ -1,57 +1,79 @@
-#app {
-  display: grid;
-  grid-template-rows: 1fr 10fr;
+.app {
   height: 100vh;
+  display: grid;
+  grid-template-rows: 10vh 90vh;
+  line-height: 2;
 }
 
-#toolbar {
+.toolbar {
   display: flex;
   align-items: center;
   justify-content: space-evenly;
 }
 
-#toolbar button {
+.toolbar button {
   width: 40px;
   height: 40px;
   background-color: #E0E0E0;
   border: none;
   border-radius: 10px;
   box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.6);
-  transition: box-shadow 0.2s ease-in-out;
 }
 
-#toolbar button:hover {
+.toolbar button:hover {
   box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
   cursor: pointer;
 }
 
-#container {
+.container {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 100%;
+  grid-template-columns: 50vw 50vw;
 }
 
-#left {
+.left {
   background-color: white;
   margin: 2% 1% 2% 2%;
   padding: 5% 4%;
   border-radius: 10px;
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  gap: 3vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
-#problem-title {
-  font-size: 36px;
+.title {
+  font-size: xx-large;
   font-weight: bold;
 }
 
-#problem-difficulty {
-  font-weight: bold;
+.difficulty.easy {
   color: green;
 }
 
-#problem-examples-container {
+.difficulty.medium {
+  color: orange;
+}
+
+.difficulty.hard {
+  color: red;
+}
+
+.examples-container {
+  display: flex;
+  flex-direction: column;
+  gap: 3vh;
+}
+
+.example {
   background-color: #EEEEEE;
   padding: 4% 3%;
   border-radius: 10px;
+}
+
+.image-container {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 3vh;
 }

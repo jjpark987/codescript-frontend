@@ -10,11 +10,12 @@ interface Problem {
   title: string;
   difficulty: string;
   description: string;
-  constraints: string;
+  constraints: string[];
   examples: Example[];
 }
 
 interface Example {
+  imageUrl: string;
   input: string;
   output: string;
   explanation: string;
@@ -25,35 +26,44 @@ function App() {
     title: '',
     difficulty: '',
     description: '',
-    constraints: '',
+    constraints: [],
     examples: []
   });
-
   async function fetchProblem() {
     try {
-      console.log(RANDOM_PROBLEM_URL)
       const response = await fetch(RANDOM_PROBLEM_URL);
+      // const response = await fetch('http://localhost:8000/problems/117');
       if (!response.ok) throw new Error('❌ App.tsx -> API Error');
       const problem_data = await response.json();
+
+      const imageUrls = problem_data.image_urls;
+      const examples: Example[] = problem_data.problem.examples;
+      
+      examples.forEach((example, index) => {
+        if (imageUrls[index]) {
+          example.imageUrl = imageUrls[index];
+        }
+      });
+
       setProblem({
-        title: problem_data.title,
-        difficulty: problem_data.difficulty,
-        description: problem_data.description,
-        constraints: problem_data.constraints,
-        examples: problem_data.examples
+        title: problem_data.problem.title,
+        difficulty: ({ 1: 'Easy', 2: 'Medium', 3: 'Hard' } as Record<number, string>)[problem_data.problem.difficulty] || 'Unknown',
+        description: problem_data.problem.description,
+        constraints: problem_data.problem.constraints,
+        examples: problem_data.problem.examples
       });
     } catch (error) {
       console.error('❌ App.tsx -> Fetch error', error);
     }
   }
-
+  
   useEffect(() => {
     fetchProblem();
   }, []);
-
+  console.log(problem)
   return (
-    <div id='app'>
-      <div id='toolbar'>
+    <div className='app'>
+      <div className='toolbar'>
         <button>
           <img src={toggleViewIcon} alt='Toggle View Button Icon' />
         </button>
@@ -64,23 +74,32 @@ function App() {
           <img src={submitIcon} alt='Submit Button Icon' />
         </button>
       </div>
-      <div id='container'>
-        <div id='left'>
-          <div id='problem-title'>{problem.title}</div>
-          <div id='problem-difficulty'>{problem.difficulty}</div>
+      <div className='container'>
+        <div className='left'>
+          <div className='title'>{problem.title}</div>
+          <div className={`difficulty ${problem.difficulty.toLowerCase()}`}>{problem.difficulty}</div>
           <div>{problem.description}</div>
-          <div>{problem.constraints}</div>
-          <div id='problem-examples-container'>
+          <div>
+            {problem.constraints.map((constraint, index) => (
+              <div key={index}>{constraint}</div>
+            ))}
+          </div>
+          <div className='examples-container'>
             {problem.examples.map((example, index) => (
-              <div key={index}>
-                <div>{example.input}</div>
-                <div>{example.output}</div>
+              <div className='example' key={index}>
+                {example.imageUrl && (
+                  <div className='image-container'>
+                    <img src={example.imageUrl} alt='Example Image' />
+                  </div>
+                )}
+                <div>Input: {example.input}</div>
+                <div>Output: {example.output}</div>
                 <div>{example.explanation}</div>
               </div>
             ))}
           </div>
         </div>
-        <div id='right'>
+        <div className='right'>
           This is the right side
         </div>
       </div>
