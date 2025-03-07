@@ -2,6 +2,9 @@
 
 This repository contains the frontend code for CodeScript.
 
+- [codescript-backend](https://github.com/jjpark987/codescript-backend)
+- [codescript-problems](https://github.com/jjpark987/codescript-problems)
+
 ## Getting Started
 
 ### Prerequisites

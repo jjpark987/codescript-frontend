@@ -1,0 +1,17 @@
+# node modules and dependencies
+node_modules
+package-lock.json
+
+# docker files
+Dockerfile
+.dockerignore
+
+# git files
+.git
+.gitignore
+
+# editor and system files
+.DS_Store
+
+# misc
+.env

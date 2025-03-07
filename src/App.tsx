@@ -1,10 +1,17 @@
-import { useEffect, useState } from 'react'
-import toggleViewIcon from './assets/toggle-view-btn-icon.png'
-import randomProblemIcon from './assets/random-problem-btn-icon.png'
-import submitIcon from './assets/submit-btn-icon.png'
+import { useEffect, useRef, useState } from 'react'
+import toggleLeftIcon from './assets/toggle-left.png'
+import toggleRightIcon from './assets/toggle-right.png'
+import shuffleIcon from './assets/shuffle.png'
+import playIcon from './assets/play.png'
 import './App.css'
+import { EditorView, basicSetup } from 'codemirror';
+import { EditorState } from '@codemirror/state';
+import { keymap } from '@codemirror/view'
+import { indentWithTab } from '@codemirror/commands';
+import { python } from '@codemirror/lang-python';
 
 const RANDOM_PROBLEM_URL = import.meta.env.VITE_RANDOM_PROBLEM_URL
+const GENERATE_FEEDBACK_URL = import.meta.env.VITE_GENERATE_FEEDBACK_URL
 
 interface Problem {
   title: string;
@@ -21,7 +28,17 @@ interface Example {
   explanation: string;
 }
 
+interface Response {
+  analysis: string;
+  suggestions: string[];
+  score: number
+}
+
 function App() {
+  const editorRef = useRef<HTMLDivElement | null>(null);
+  const viewRef = useRef<EditorView | null>(null);
+  const submissionRef = useRef<string>('"""\n\n"""');
+
   const [problem, setProblem] = useState<Problem>({
     title: '',
     difficulty: '',
@@ -29,11 +46,32 @@ function App() {
     constraints: [],
     examples: []
   });
-  async function fetchProblem() {
+  const [viewProblem, setViewProblem] = useState(true)
+  const [response, setResponse] = useState<Response>({
+    analysis: 'Submit your approach to get a response.',
+    suggestions: [],
+    score: 0
+  })
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const initialCodeEditorState = EditorState.create({
+    doc: submissionRef.current,
+    extensions: [
+      basicSetup,
+      python(),
+      keymap.of([indentWithTab]),
+      EditorView.updateListener.of(update => {
+        if (update.docChanged) {
+          submissionRef.current = update.state.doc.toString();
+        }
+      })
+    ],
+  });
+
+  async function getProblem() {
     try {
       const response = await fetch(RANDOM_PROBLEM_URL);
-      // const response = await fetch('http://localhost:8000/problems/117');
-      if (!response.ok) throw new Error('❌ App.tsx -> API Error');
+      if (!response.ok) throw new Error('❌ App.getProblem -> API Error');
       const problem_data = await response.json();
 
       const imageUrls = problem_data.image_urls;
@@ -47,7 +85,7 @@ function App() {
 
       setProblem({
         title: problem_data.problem.title,
-        difficulty: ({ 1: 'Easy', 2: 'Medium', 3: 'Hard' } as Record<number, string>)[problem_data.problem.difficulty] || 'Unknown',
+        difficulty: ({ 1: 'Easy', 2: 'Medium', 3: 'Hard' } as Record<number, string>)[problem_data.problem.difficulty],
         description: problem_data.problem.description,
         constraints: problem_data.problem.constraints,
         examples: problem_data.problem.examples
@@ -58,49 +96,157 @@ function App() {
   }
   
   useEffect(() => {
-    fetchProblem();
+    getProblem();
+
+    // configure codemirror
+    if (editorRef.current && !viewRef.current) {
+      viewRef.current = new EditorView({
+        state: initialCodeEditorState,
+        parent: editorRef.current,
+      });
+    }
+
+    return () => {
+      if (viewRef.current) {
+        viewRef.current.destroy();
+        viewRef.current = null;
+      }
+    };
   }, []);
-  console.log(problem)
+
+  function toggleView() {
+    setViewProblem(!viewProblem);
+  }
+
+  function randomProblem() {
+    getProblem();
+    if (viewRef.current) {
+      viewRef.current.dispatch({
+        changes: { from: 0, to: viewRef.current.state.doc.length, insert: '"""\n\n"""' }
+      });
+    }
+    setViewProblem(true);
+    setResponse({
+      analysis: 'Submit your approach to get a response.',
+      suggestions: [],
+      score: 0
+    });
+  }
+
+  async function submit() {
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+
+    const request = {
+      problem_data: {
+        title: problem.title,
+        description: problem.description,
+        constraints: problem.constraints,
+        examples: problem.examples
+      },
+      user_submission: submissionRef.current
+    }
+
+    try {
+      const response = await fetch(GENERATE_FEEDBACK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(request),
+        keepalive: true
+      });
+      if (!response.ok) throw new Error('❌ App.submit -> API Error');
+      const submissionAnalysis = await response.json();
+      console.log(submissionAnalysis)
+
+      setResponse({
+        analysis: submissionAnalysis.analysis,
+        suggestions: submissionAnalysis.suggestions,
+        score: submissionAnalysis.score
+      });
+
+      setViewProblem(false);
+    } catch (error) {
+      console.error('❌ App.tsx -> Fetch error', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <div className='app'>
       <div className='toolbar'>
-        <button>
-          <img src={toggleViewIcon} alt='Toggle View Button Icon' />
+        <button onClick={toggleView}>
+          {viewProblem ? 
+            <img src={toggleLeftIcon} alt='Toggle Left Icon' />
+            :
+            <img src={toggleRightIcon} alt='Toggle Right Icon' />
+          }
         </button>
-        <button>
-          <img src={randomProblemIcon} alt='Random Problem Button Icon' />
+        <button className='disabled-btn' onClick={randomProblem} disabled={isSubmitting}>
+          <img src={shuffleIcon} alt='Shuffle Icon' />
         </button>
-        <button>
-          <img src={submitIcon} alt='Submit Button Icon' />
+        <button className='disabled-btn' onClick={submit} disabled={isSubmitting}>
+          <img src={playIcon} alt='Play Icon' />
         </button>
       </div>
       <div className='container'>
-        <div className='left'>
-          <div className='title'>{problem.title}</div>
-          <div className={`difficulty ${problem.difficulty.toLowerCase()}`}>{problem.difficulty}</div>
-          <div>{problem.description}</div>
-          <div>
-            {problem.constraints.map((constraint, index) => (
-              <div key={index}>{constraint}</div>
-            ))}
+        {viewProblem ?
+          <div className='left-problem'>
+            <div className='title'>{problem.title}</div>
+            <div className={`difficulty ${problem.difficulty.toLowerCase()}`}>{problem.difficulty}</div>
+            <div>{problem.description}</div>
+            <div>
+              {problem.constraints.map((constraint, index) => (
+                <div key={index}>{constraint}</div>
+              ))}
+            </div>
+            <div className='section-container'>
+              {problem.examples.map((example, index) => (
+                <div className='section' key={index}>
+                  {example.imageUrl && (
+                    <div className='image-container'>
+                      <img src={example.imageUrl} alt='Example Image' />
+                    </div>
+                  )}
+                  <div>Input: {example.input}</div>
+                  <div>Output: {example.output}</div>
+                  <div>{example.explanation}</div>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className='examples-container'>
-            {problem.examples.map((example, index) => (
-              <div className='example' key={index}>
-                {example.imageUrl && (
-                  <div className='image-container'>
-                    <img src={example.imageUrl} alt='Example Image' />
+          :
+          <div className='left-response'>
+            <div className='left-response-details'>
+              <div className='title'>{problem.title}</div>
+              <div>{response.analysis}</div>
+              <div className='section-container'>
+                {response.suggestions.length !== 0 && 
+                  <div className='section'>
+                    <div>Suggestions:</div>
+                    <ul className='suggestions-container'>
+                      {response.suggestions.map((suggestion, index) => (
+                        <li key={index}>{suggestion}</li>
+                      ))}
+                    </ul>
                   </div>
-                )}
-                <div>Input: {example.input}</div>
-                <div>Output: {example.output}</div>
-                <div>{example.explanation}</div>
+                }
               </div>
-            ))}
+            </div>
+            <div className='score-bar-container'>
+              <div
+                className='score-bar' 
+                style={{ backgroundColor: response.score == 0 ? 'white' : response.score === 1 ? 'red' : response.score === 2 ? 'orange' : 'green' }}
+              />
+            </div>
           </div>
-        </div>
+        }
         <div className='right'>
-          This is the right side
+          <div className='code-editor-header'>Write your approach in the comment block or code your solution in Python below it.</div>
+          <div className='editor-wrapper'>
+              <div ref={editorRef} className='editor-container' />
+          </div>
         </div>
       </div>
     </div>
