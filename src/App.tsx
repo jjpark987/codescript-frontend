@@ -147,6 +147,7 @@ function App() {
       },
       user_submission: submissionRef.current
     }
+    console.log(request)
 
     try {
       const response = await fetch(GENERATE_FEEDBACK_URL, {
@@ -157,7 +158,6 @@ function App() {
       });
       if (!response.ok) throw new Error('❌ App.submit -> API Error');
       const submissionAnalysis = await response.json();
-      console.log(submissionAnalysis)
 
       setResponse({
         analysis: submissionAnalysis.analysis,
