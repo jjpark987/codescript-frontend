@@ -151,7 +151,6 @@ function App() {
       },
       user_submission: submissionRef.current
     }
-    console.log(request)
 
     try {
       const response = await fetch(GENERATE_FEEDBACK_URL, {
