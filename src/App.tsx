@@ -10,8 +10,12 @@ import { keymap } from '@codemirror/view'
 import { indentWithTab } from '@codemirror/commands';
 import { python } from '@codemirror/lang-python';
 
+// use for npm run build
+// const RANDOM_PROBLEM_URL = 'http://codescript-demo-env.eba-edrru6it.us-east-2.elasticbeanstalk.com/problems/random';
+// const GENERATE_FEEDBACK_URL = 'http://codescript-demo-env.eba-edrru6it.us-east-2.elasticbeanstalk.com/generate_feedback';
 const RANDOM_PROBLEM_URL = import.meta.env.VITE_RANDOM_PROBLEM_URL
 const GENERATE_FEEDBACK_URL = import.meta.env.VITE_GENERATE_FEEDBACK_URL
+
 
 interface Problem {
   title: string;
@@ -91,7 +95,7 @@ function App() {
         examples: problem_data.problem.examples
       });
     } catch (error) {
-      console.error('❌ App.tsx -> Fetch error', error);
+      console.error('❌ App.tsx -> Fetch error getting problem', error);
     }
   }
   
@@ -167,7 +171,7 @@ function App() {
 
       setViewProblem(false);
     } catch (error) {
-      console.error('❌ App.tsx -> Fetch error', error);
+      console.error('❌ App.tsx -> Fetch error submitting response', error);
     } finally {
       setIsSubmitting(false);
     }
