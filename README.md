@@ -11,7 +11,6 @@ This repository contains the frontend code for CodeScript.
 ### Prerequisites
 
 - Node.js
-- npm
 
 ### Installation
 
