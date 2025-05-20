@@ -10,7 +10,7 @@ import { keymap } from '@codemirror/view'
 import { indentWithTab } from '@codemirror/commands';
 import { python } from '@codemirror/lang-python';
 
-// use for npm run build
+// use for npm run build for Elastic Beanstalk
 // const RANDOM_PROBLEM_URL = 'http://codescript-demo-env.eba-edrru6it.us-east-2.elasticbeanstalk.com/problems/random';
 // const GENERATE_FEEDBACK_URL = 'http://codescript-demo-env.eba-edrru6it.us-east-2.elasticbeanstalk.com/generate_feedback';
 const RANDOM_PROBLEM_URL = import.meta.env.VITE_RANDOM_PROBLEM_URL
@@ -161,6 +161,8 @@ function App() {
       });
       if (!response.ok) throw new Error('❌ App.submit -> API Error');
       const submissionAnalysis = await response.json();
+
+      console.log(submissionAnalysis)
 
       setResponse({
         analysis: submissionAnalysis.analysis,
